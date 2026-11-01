@@ -2,10 +2,10 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-  workflow_dispatch: # Allows 1-click manual trigger anytime from GitHub website
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,68 +13,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: ☕ Set up Java 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
           cache: 'gradle'
 
-      - name: 🐦 Set up Flutter SDK
+      - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.3'
           channel: 'stable'
           cache: true
 
-      - name: 🛠️ Setup Pristine Android Project Scaffolding
+      - name: Initialize Android Scaffolding
         run: |
           cd mobile_app
-          # Remove incomplete manual scaffolding so Flutter can generate official wrappers & mipmaps
           rm -rf android
-          # Let official Flutter generate certified Android project structure
           flutter create --org com.bdtraintracker --project-name bd_train_tracker --platforms=android .
+          python3 configure_android.py
 
-          # Inject permissions, cleartext network traffic and Bengali app title
-          python3 -c '
-          manifest_path = "android/app/src/main/AndroidManifest.xml"
-          with open(manifest_path, "r", encoding="utf-8") as f:
-              content = f.read()
-
-          permissions = """
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-"""
-          content = content.replace("<application", permissions + "    <application")
-          content = content.replace("android:label=\"bd_train_tracker\"", "android:label=\"বিডি ট্রেন ট্র্যাকার\" android:usesCleartextTraffic=\"true\"")
-          with open(manifest_path, "w", encoding="utf-8") as f:
-              f.write(content)
-          print("AndroidManifest.xml successfully patched!")
-          '
-
-      - name: 📦 Install Flutter Dependencies
+      - name: Install Dependencies
         run: |
           cd mobile_app
           flutter pub get
 
-      - name: 🚀 Build Release APK
+      - name: Build Release APK
         run: |
           cd mobile_app
           flutter build apk --release --no-tree-shake-icons
 
-      - name: 💾 Rename APK
+      - name: Rename Output APK
         run: |
           cp mobile_app/build/app/outputs/flutter-apk/app-release.apk mobile_app/build/app/outputs/flutter-apk/BDTrainTracker-v1.0.apk
 
-      - name: 📤 Upload APK Artifact (Direct Download)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BDTrainTracker-v1.0-APK
