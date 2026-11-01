@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'stoppage_info.dart';
 
 class Train {
   final int id;
@@ -13,6 +14,19 @@ class Train {
   final String arrTime;
   final String offDay;
   final String type;
+  
+  // Real-time tracking & community fields (matching original app)
+  final int liveDelayMinutes;
+  final double currentSpeed; // km/h
+  final String nextStationName;
+  final String lastUpdatedTimeAgo;
+  final int activePassengersCount;
+  final int totalVisits;
+  final bool isFavorite;
+  final double journeyCompletedPercent;
+  final double completedDistanceKm;
+  final double totalDistanceKm;
+  final List<StoppageInfo> stoppages;
 
   const Train({
     required this.id,
@@ -27,6 +41,17 @@ class Train {
     required this.arrTime,
     required this.offDay,
     required this.type,
+    this.liveDelayMinutes = 0,
+    this.currentSpeed = 68.0,
+    this.nextStationName = "",
+    this.lastUpdatedTimeAgo = "১ মি আগে",
+    this.activePassengersCount = 14,
+    this.totalVisits = 420,
+    this.isFavorite = false,
+    this.journeyCompletedPercent = 45.0,
+    this.completedDistanceKm = 148.0,
+    this.totalDistanceKm = 342.0,
+    this.stoppages = const [],
   });
 
   factory Train.fromJson(Map<String, dynamic> json) {
@@ -43,24 +68,63 @@ class Train {
       arrTime: json['arr_time'] as String? ?? '',
       offDay: json['off_day'] as String? ?? 'None',
       type: json['type'] as String? ?? 'Intercity',
+      liveDelayMinutes: json['delay_minutes'] as int? ?? 0,
+      currentSpeed: (json['speed'] as num?)?.toDouble() ?? 64.0,
+      nextStationName: json['next_station'] as String? ?? '',
+      lastUpdatedTimeAgo: json['updated_ago'] as String? ?? '১ মি আগে',
+      activePassengersCount: json['passengers'] as int? ?? 12,
+      totalVisits: json['visits'] as int? ?? 350,
+      isFavorite: json['is_favorite'] as bool? ?? false,
+      journeyCompletedPercent: (json['progress'] as num?)?.toDouble() ?? 50.0,
+      completedDistanceKm: (json['completed_km'] as num?)?.toDouble() ?? 120.0,
+      totalDistanceKm: (json['total_km'] as num?)?.toDouble() ?? 320.0,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'code': code,
-      'name': name,
-      'name_bn': nameBn,
-      'origin': origin,
-      'origin_bn': originBn,
-      'destination': destination,
-      'destination_bn': destinationBn,
-      'dep_time': depTime,
-      'arr_time': arrTime,
-      'off_day': offDay,
-      'type': type,
-    };
+  Train copyWith({
+    bool? isFavorite,
+    int? liveDelayMinutes,
+    double? currentSpeed,
+    String? nextStationName,
+    String? lastUpdatedTimeAgo,
+    int? activePassengersCount,
+    List<StoppageInfo>? stoppages,
+  }) {
+    return Train(
+      id: id,
+      code: code,
+      name: name,
+      nameBn: nameBn,
+      origin: origin,
+      originBn: originBn,
+      destination: destination,
+      destinationBn: destinationBn,
+      depTime: depTime,
+      arrTime: arrTime,
+      offDay: offDay,
+      type: type,
+      liveDelayMinutes: liveDelayMinutes ?? this.liveDelayMinutes,
+      currentSpeed: currentSpeed ?? this.currentSpeed,
+      nextStationName: nextStationName ?? this.nextStationName,
+      lastUpdatedTimeAgo: lastUpdatedTimeAgo ?? this.lastUpdatedTimeAgo,
+      activePassengersCount: activePassengersCount ?? this.activePassengersCount,
+      totalVisits: totalVisits,
+      isFavorite: isFavorite ?? this.isFavorite,
+      journeyCompletedPercent: journeyCompletedPercent,
+      completedDistanceKm: completedDistanceKm,
+      totalDistanceKm: totalDistanceKm,
+      stoppages: stoppages ?? this.stoppages,
+    );
+  }
+
+  bool get isOnTime => liveDelayMinutes <= 2;
+
+  String get delayStatusText {
+    if (liveDelayMinutes <= 0) return "সময়মতো";
+    if (liveDelayMinutes < 60) return "$liveDelayMinutes মিনিট দেরি";
+    final h = liveDelayMinutes ~/ 60;
+    final m = liveDelayMinutes % 60;
+    return "$h ঘণ্টা $m মিনিট দেরি";
   }
 
   /// Calculates estimated travel duration

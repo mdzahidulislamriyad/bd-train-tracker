@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/train_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -21,10 +21,10 @@ class BdTrainTrackerApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'বিডি ট্রেন ট্র্যাকার',
+        title: 'বিডি ট্রেন গাইড',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const HomeScreen(),
+        home: const MainShellScreen(),
       ),
     );
   }
