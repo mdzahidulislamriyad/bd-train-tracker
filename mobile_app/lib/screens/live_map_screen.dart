@@ -191,7 +191,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${widget.train.nameBn} (${widget.train.code})',
+                                '${train.nameBn} (${train.code})',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
