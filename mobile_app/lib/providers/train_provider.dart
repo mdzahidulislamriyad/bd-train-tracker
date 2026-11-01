@@ -420,8 +420,14 @@ class TrainProvider extends ChangeNotifier {
   bool _isOnTrainTracking = false;
   bool get isOnTrainTracking => _isOnTrainTracking;
 
-  void toggleOnTrainTracking(Train train, bool value) {
-    _isOnTrainTracking = value;
+  void toggleOnTrainTracking([dynamic arg1, dynamic arg2]) {
+    if (arg1 is bool) {
+      _isOnTrainTracking = arg1;
+    } else if (arg2 is bool) {
+      _isOnTrainTracking = arg2;
+    } else {
+      _isOnTrainTracking = !_isOnTrainTracking;
+    }
     notifyListeners();
   }
 
