@@ -6,6 +6,8 @@ import '../models/station.dart';
 import '../models/train.dart';
 import '../models/stoppage_info.dart';
 import '../models/prayer_time_model.dart';
+import '../models/live_location.dart';
+import '../models/platform_coach_item.dart';
 
 class TrainProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -412,5 +414,61 @@ class TrainProvider extends ChangeNotifier {
   void setBoardStation(String stationName) {
     _selectedBoardStation = stationName;
     notifyListeners();
+  }
+
+  // Live on-train crowdsourced tracking
+  bool _isOnTrainTracking = false;
+  bool get isOnTrainTracking => _isOnTrainTracking;
+
+  void toggleOnTrainTracking(Train train, bool value) {
+    _isOnTrainTracking = value;
+    notifyListeners();
+  }
+
+  LiveLocation? get currentLiveLocation {
+    if (_selectedTrain == null) return null;
+    return LiveLocation(
+      trainCode: _selectedTrain!.code,
+      trainName: _selectedTrain!.nameBn,
+      position: const LatLng(23.8516, 90.4078),
+      speedKmh: _selectedTrain!.currentSpeed,
+      nearestStation: "বিমানবন্দর স্টেশন",
+      nextStation: _selectedTrain!.nextStationName,
+      lastUpdated: DateTime.now(),
+      activePassengers: _selectedTrain!.activePassengersCount,
+    );
+  }
+
+  // Favorite trains
+  final Set<String> _favoriteTrainCodes = {};
+  bool isTrainFavorite(String code) => _favoriteTrainCodes.contains(code);
+
+  void toggleFavorite(String trainCode) {
+    if (_favoriteTrainCodes.contains(trainCode)) {
+      _favoriteTrainCodes.remove(trainCode);
+    } else {
+      _favoriteTrainCodes.add(trainCode);
+    }
+    notifyListeners();
+  }
+
+  // Platform coach positioning guide
+  StationPlatformGuide getPlatformGuide(Train train, String stationName) {
+    return StationPlatformGuide(
+      stationName: stationName,
+      platformName: "প্ল্যাটফর্ম ৩",
+      directionDescription: "${train.destinationBn}-এর দিকে ট্রেন ছুটবে",
+      footbridgeSegment: 6,
+      coaches: const [
+        PlatformCoachItem(coachCode: "ইঞ্জিন", coachName: "ইঞ্জিন", classType: CoachClassType.engine, platformSegmentNumber: 1),
+        PlatformCoachItem(coachCode: "পাওয়ার", coachName: "পাওয়ার কার", classType: CoachClassType.powerCar, platformSegmentNumber: 2),
+        PlatformCoachItem(coachCode: "ক", coachName: "শোভন চেয়ার", classType: CoachClassType.shovonChair, platformSegmentNumber: 3),
+        PlatformCoachItem(coachCode: "খ", coachName: "শোভন চেয়ার", classType: CoachClassType.shovonChair, hasPassengerStanding: true, platformSegmentNumber: 4),
+        PlatformCoachItem(coachCode: "গ", coachName: "শোভন চেয়ার", classType: CoachClassType.shovonChair, platformSegmentNumber: 5),
+        PlatformCoachItem(coachCode: "ঘ", coachName: "স্নিগ্ধা (এসি চেয়ার)", classType: CoachClassType.snigdha, platformSegmentNumber: 6),
+        PlatformCoachItem(coachCode: "ঙ", coachName: "স্নিগ্ধা (এসি চেয়ার)", classType: CoachClassType.snigdha, platformSegmentNumber: 7),
+        PlatformCoachItem(coachCode: "চ", coachName: "এসি বার্থ/কেবিন", classType: CoachClassType.acBerth, platformSegmentNumber: 8),
+      ],
+    );
   }
 }

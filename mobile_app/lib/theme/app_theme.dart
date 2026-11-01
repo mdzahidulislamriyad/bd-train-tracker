@@ -42,6 +42,10 @@ class AppTheme {
   static const Color lightGreen = primarySoft;
   static const Color accentOrange = accentAmber;
   static const Color lateRed = statusRed;
+  static const Color onTimeGreen = statusGreen;
+  static const Color dividerColor = borderLight;
+  static const Color slateText = textBody;
+  static const Color backgroundGrey = surfaceVariant;
   static const Color lightGrey = surfaceVariant;
   static const Color slateDark = textDark;
   static const Color slateMuted = textMuted;
