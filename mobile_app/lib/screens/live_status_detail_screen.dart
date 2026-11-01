@@ -312,7 +312,7 @@ class _LiveStatusDetailScreenState extends State<LiveStatusDetailScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LiveMapScreen()),
+                  MaterialPageRoute(builder: (_) => LiveMapScreen(train: train)),
                 );
               },
             ),

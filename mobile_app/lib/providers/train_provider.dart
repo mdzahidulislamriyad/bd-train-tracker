@@ -143,12 +143,13 @@ class TrainProvider extends ChangeNotifier {
     _isOnTrainTracking = value;
     if (_isOnTrainTracking) {
       _currentLiveLocation = LiveLocation(
-        point: const LatLng(23.7258, 90.4262), // Near Kamalapur
-        speedKmH: 72.5,
-        heading: 135.0,
-        timestamp: DateTime.now(),
-        nearestStationName: "টঙ্গী জংশন",
-        distanceToNearestKm: 2.4,
+        trainCode: _selectedTrain?.code ?? "788",
+        trainName: _selectedTrain?.nameBn ?? "সোনার বাংলা এক্সপ্রেস",
+        position: const LatLng(23.7258, 90.4262),
+        speedKmh: 72.5,
+        nearestStation: "টঙ্গী জংশন",
+        nextStation: "ঢাকা বিমানবন্দর",
+        lastUpdated: DateTime.now(),
       );
     }
     notifyListeners();

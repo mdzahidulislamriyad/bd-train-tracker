@@ -660,21 +660,17 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _openStationPicker(BuildContext context, {required bool isFrom}) {
-    showModalBottomSheet(
+    StationPickerSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StationPickerSheet(
-        title: isFrom ? "যাত্রার প্রারম্ভিক স্টেশন" : "গন্তব্য স্টেশন",
-        onSelected: (station) {
-          final p = context.read<TrainProvider>();
-          if (isFrom) {
-            p.setFromStation(station);
-          } else {
-            p.setToStation(station);
-          }
-        },
-      ),
+      title: isFrom ? "যাত্রার প্রারম্ভিক স্টেশন" : "গন্তব্য স্টেশন",
+      onSelected: (station) {
+        final p = context.read<TrainProvider>();
+        if (isFrom) {
+          p.setFromStation(station);
+        } else {
+          p.setToStation(station);
+        }
+      },
     );
   }
 
@@ -691,16 +687,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _openVoiceSearch(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => VoiceSearchSheet(
-        onRecognized: (query) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("খুঁজছি: $query"), behavior: SnackBarBehavior.floating),
-          );
-        },
-      ),
-    );
+    VoiceSearchSheet.show(context);
   }
 }

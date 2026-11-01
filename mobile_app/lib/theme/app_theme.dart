@@ -23,6 +23,14 @@ class AppTheme {
   static const Color slateText = Color(0xFF334155); // Body text
   static const Color slateMuted = Color(0xFF64748B); // Subtitle / hint
   static const Color dividerColor = Color(0xFFE2E8F0);
+
+  // Backward-compatible aliases for existing components
+  static const Color primaryGreen = primary;
+  static const Color lightGreen = primaryLight;
+  static const Color textDark = slateDark;
+  static const Color textMuted = slateMuted;
+  static const Color backgroundGrey = background;
+  static const Color accentOrange = accentAmber;
   
   static ThemeData get lightTheme {
     final textTheme = GoogleFonts.hindSiliguriTextTheme().copyWith(

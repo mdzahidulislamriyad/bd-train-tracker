@@ -8,9 +8,9 @@ import '../services/railway_data_service.dart';
 import '../theme/app_theme.dart';
 
 class LiveMapScreen extends StatefulWidget {
-  final Train train;
+  final Train? train;
 
-  const LiveMapScreen({super.key, required this.train});
+  const LiveMapScreen({super.key, this.train});
 
   @override
   State<LiveMapScreen> createState() => _LiveMapScreenState();
@@ -24,13 +24,18 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   late double _speed;
   late String _nearestStation;
 
+  Train _getTrain(TrainProvider provider) {
+    return widget.train ?? provider.selectedTrain ?? provider.allTrains.first;
+  }
+
   @override
   void initState() {
     super.initState();
     final provider = context.read<TrainProvider>();
+    final activeTrain = _getTrain(provider);
 
     if (provider.isOnTrainTracking &&
-        provider.currentLiveLocation?.trainCode == widget.train.code) {
+        provider.currentLiveLocation?.trainCode == activeTrain.code) {
       _trainPosition = provider.currentLiveLocation!.position;
       _speed = provider.currentLiveLocation!.speedKmh;
       _nearestStation = provider.currentLiveLocation!.nearestStation;
@@ -44,15 +49,17 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TrainProvider>();
+    final train = _getTrain(provider);
     final trackSegments = _dataService.trackSegments;
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           children: [
-            Text(widget.train.nameBn),
+            Text(train.nameBn),
             Text(
-              '${widget.train.originBn} ➔ ${widget.train.destinationBn}',
+              '${train.originBn} ➔ ${train.destinationBn}',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
           ],
