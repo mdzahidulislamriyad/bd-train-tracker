@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:label="বিডি ট্রেন ট্র্যাকার"
+        android:label="বিডি ট্রেন গাইড"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

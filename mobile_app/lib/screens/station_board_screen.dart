@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/station_board_item.dart';
 import '../providers/train_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -11,246 +10,533 @@ class StationBoardScreen extends StatefulWidget {
   State<StationBoardScreen> createState() => _StationBoardScreenState();
 }
 
-class _StationBoardScreenState extends State<StationBoardScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  String _selectedStation = "ঢাকা (কমলাপুর)";
+class _StationBoardScreenState extends State<StationBoardScreen> {
+  int _boardTabIndex = 0; // 0: ট্রেনের অবস্থা, 1: বোর্ডের ছবি
+  String _currentStation = "ঢাকা";
 
-  final List<String> _popularStations = [
-    "ঢাকা (কমলাপুর)",
-    "ঢাকা বিমানবন্দর",
-    "চট্টগ্রাম",
-    "সিলেট",
-    "রাজশাহী",
-    "খুলনা",
+  final List<Map<String, dynamic>> _liveBoardTrains = [
+    {
+      "time": "২২:৩৫",
+      "delayText": "৪০ মি দেরি",
+      "delayColor": AppTheme.statusRed,
+      "trainName": "সোনার বাংলা এক্সপ্রেস",
+      "trainCode": "৭৮৭",
+      "route": "চট্টগ্রাম - ঢাকা",
+      "platform": "প্ল্যাটফর্ম ৭",
+      "schedule": "২১:৫৫",
+      "isUpcoming": true,
+    },
+    {
+      "time": "২২:০০",
+      "delayText": "ঘোষণা হয়েছে",
+      "delayColor": AppTheme.accentBlue,
+      "trainName": "উপবন এক্সপ্রেস",
+      "trainCode": "৭৩৯",
+      "route": "ঢাকা - সিলেট",
+      "platform": "প্ল্যাটফর্ম ১",
+      "schedule": "২২:০০",
+      "isUpcoming": true,
+    },
+    {
+      "time": "২১:৫৪",
+      "delayText": "পৌঁছেছে",
+      "delayColor": AppTheme.textMuted,
+      "trainName": "পঞ্চগড় এক্সপ্রেস",
+      "trainCode": "৭৯৪",
+      "route": "পঞ্চগড় - ঢাকা",
+      "platform": "প্ল্যাটফর্ম ৫",
+      "schedule": "২২:১০",
+      "isUpcoming": false,
+    },
+    {
+      "time": "২২:১৫",
+      "delayText": "সময়মতো",
+      "delayColor": AppTheme.statusGreen,
+      "trainName": "হাওর এক্সপ্রেস",
+      "trainCode": "৭৭৭",
+      "route": "ঢাকা - মোহনগঞ্জ",
+      "platform": "প্ল্যাটফর্ম ৩",
+      "schedule": "২২:১৫",
+      "isUpcoming": true,
+    },
+  ];
+
+  final List<Map<String, String>> _allStationsBoardList = [
+    {"name": "চট্টগ্রাম", "trains": "৩টি ট্রেন ৩১মি আগে আপডেট হয়েছে"},
+    {"name": "ঢাকা", "trains": "৪টি ট্রেন ৪১মি আগে আপডেট হয়েছে"},
+    {"name": "বিমান বন্দর", "trains": "৭টি ট্রেন ১ঘ ২০মি আগে আপডেট হয়েছে"},
+    {"name": "টাঙ্গাইল", "trains": "১টি ট্রেন ১ঘ ৫২মি আগে আপডেট হয়েছে"},
+    {"name": "ফেনী", "trains": "১৩টি ট্রেন ১ নভেম্বর ২০২৬ তারিখে যোগ..."},
+    {"name": "দিনাজপুর", "trains": "১৪টি ট্রেন ১ নভেম্বর ২০২৬ তারিখে যোগ..."},
+    {"name": "বাদিয়াখালী", "trains": "৫টি ট্রেন আপডেট হয়েছে"},
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final provider = context.watch<TrainProvider>();
-    final allBoards = provider.getStationLiveBoards(_selectedStation);
-    final departures = allBoards.where((b) => b.type == BoardTrainType.departure).toList();
-    final arrivals = allBoards.where((b) => b.type == BoardTrainType.arrival).toList();
-
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text("স্টেশন ডিজিটাল ডিসপ্লে বোর্ড"),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          tabs: const [
-            Tab(text: "প্রস্থান (Departures)", icon: Icon(Icons.flight_takeoff, size: 18)),
-            Tab(text: "আগমন (Arrivals)", icon: Icon(Icons.flight_land, size: 18)),
-          ],
-        ),
-      ),
       body: Column(
         children: [
-          // Station Selector Card
+          // 1. Curved Magenta Header (Matches Screenshot 6)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.white,
+            padding: const EdgeInsets.only(top: 40, bottom: 16, left: 16, right: 16),
+            decoration: const BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
             child: Row(
               children: [
-                const Icon(Icons.train, color: AppTheme.primary, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStation,
-                      isExpanded: true,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.slateDark),
-                      items: _popularStations.map((s) {
-                        return DropdownMenuItem(value: s, child: Text(s));
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedStation = val);
-                      },
+                // Back Button
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.arrow_back, color: AppTheme.primary, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "স্টেশন বোর্ড",
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
+                    Text(
+                      "ট্রেনের অবস্থা ও বোর্ডের ছবি",
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.grid_view, color: AppTheme.primary, size: 20),
+                    onPressed: () => _openStationPicker(context),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Digital Display Notice
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: const Color(0xFF0F172A),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+          // 2. Station Selector Card (Matches Screenshot 6)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+            child: InkWell(
+              onTap: () => _openStationPicker(context),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
                   children: [
-                    Icon(Icons.live_tv, color: AppTheme.accentGold, size: 14),
-                    SizedBox(width: 6),
-                    Text(
-                      "লাইভ স্টেশন ডিসপ্লে",
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    const Icon(Icons.location_on, color: AppTheme.textMuted, size: 20),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("স্টেশন", style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                        Text(
+                          _currentStation,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                        ),
+                      ],
                     ),
+                    const Spacer(),
+                    const Icon(Icons.keyboard_arrow_down, color: AppTheme.textMuted),
                   ],
                 ),
-                Text(
-                  "স্বয়ংক্রিয় আপডেট",
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+              ),
             ),
           ),
 
-          // Tab Bar View
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildBoardList(departures),
-                _buildBoardList(arrivals),
-              ],
+          // 3. Tab Bar: [ 🚆 ট্রেনের অবস্থা ] | [ 📷 বোর্ডের ছবি ]
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _boardTabIndex = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _boardTabIndex == 0 ? const Color(0xFFFCE4EC) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.train_outlined,
+                              size: 16,
+                              color: _boardTabIndex == 0 ? AppTheme.primary : AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "ট্রেনের অবস্থা",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: _boardTabIndex == 0 ? FontWeight.bold : FontWeight.w500,
+                                color: _boardTabIndex == 0 ? AppTheme.primary : AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _boardTabIndex = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _boardTabIndex == 1 ? const Color(0xFFFCE4EC) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt_outlined,
+                              size: 16,
+                              color: _boardTabIndex == 1 ? AppTheme.primary : AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "বোর্ডের ছবি",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: _boardTabIndex == 1 ? FontWeight.bold : FontWeight.w500,
+                                color: _boardTabIndex == 1 ? AppTheme.primary : AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ),
+
+          // Content
+          Expanded(
+            child: _boardTabIndex == 0 ? _buildTrainBoardList(context) : _buildBoardPhotosList(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBoardList(List<StationBoardItem> items) {
-    if (items.isEmpty) {
-      return const Center(
-        child: Text(
-          "এই মুহূর্তে কোনো ট্রেনের সূচি নেই",
-          style: TextStyle(color: AppTheme.slateMuted),
+  // View 1: Live Trains on Station (Screenshot 6)
+  Widget _buildTrainBoardList(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      children: [
+        // Subheader: গত ১ ঘণ্টা ও আগামী ১ ঘণ্টা • এইমাত্র আপডেট ↺
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "গত ১ ঘণ্টা ও আগামী ১ ঘণ্টা",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                ),
+                Text("এইমাত্র আপডেট", style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: AppTheme.primary),
+              onPressed: () {},
+            ),
+          ],
         ),
-      );
-    }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: items.length,
-      itemBuilder: (ctx, index) {
-        final item = items[index];
-        final isOnTime = item.isOnTime;
+        const SizedBox(height: 8),
 
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.dividerColor),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
+        ..._liveBoardTrains.map((item) {
+          final isDelay = item["delayColor"] == AppTheme.statusRed;
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Platform Badge
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.platform,
-                        style: const TextStyle(
-                          fontSize: 14,
+                  // Time and Delay Pill
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item["time"] as String,
+                        style: TextStyle(
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
+                          color: isDelay ? AppTheme.statusRed : AppTheme.textDark,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (item["delayColor"] as Color).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          item["delayText"] as String,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: item["delayColor"] as Color,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
+
+                  const SizedBox(width: 14),
 
                   // Train Details
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "${item.trainName} (${item.trainNumber})",
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.slateDark),
+                        Row(
+                          children: [
+                            Text(
+                              item["trainName"] as String,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFCE4EC),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item["trainCode"] as String,
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          item.type == BoardTrainType.departure
-                              ? "গন্তব্য: ${item.destination}"
-                              : "যাত্রা শুরু: ${item.origin}",
-                          style: const TextStyle(fontSize: 12, color: AppTheme.slateMuted),
+                          item["route"] as String,
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                item["platform"] as String,
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "সূচি ${item["schedule"]}",
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
 
-                  // Time and Status
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        item.expectedTime,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: isOnTime ? AppTheme.slateDark : AppTheme.lateRed,
-                        ),
-                      ),
-                      if (!isOnTime)
-                        Text(
-                          "নির্ধারিত: ${item.scheduledTime}",
-                          style: const TextStyle(fontSize: 11, color: AppTheme.slateMuted, decoration: TextDecoration.lineThrough),
-                        ),
-                    ],
+                  // Action Button: [ জানান ]
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primary,
+                      side: const BorderSide(color: AppTheme.primary),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      minimumSize: const Size(50, 30),
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("${item["trainName"]} এর লাইভ তথ্য সাবমিট করুন")),
+                      );
+                    },
+                    child: const Text("জানান", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              const Divider(),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  // View 2: All Station Boards with Photos (Screenshot 7)
+  Widget _buildBoardPhotosList(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "৯৫টি স্টেশন",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+            ),
+            Row(
+              children: [
+                _buildFilterTag("সব", true),
+                const SizedBox(width: 6),
+                _buildFilterTag("আজকের", false),
+                const SizedBox(width: 6),
+                _buildFilterTag("সময়সূচি", false),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ..._allStationsBoardList.map((st) {
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 children: [
+                  // Board Photo Placeholder / Image
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    width: 70,
+                    height: 60,
                     decoration: BoxDecoration(
-                      color: isOnTime ? AppTheme.primaryLight : const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(6),
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
-                      item.statusDescription,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isOnTime ? AppTheme.onTimeGreen : AppTheme.lateRed,
-                      ),
+                    child: const Icon(Icons.live_tv, color: Colors.greenAccent, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          st["name"]!,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
+                            const SizedBox(width: 4),
+                            const Text("আজকের বোর্ড", style: TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          st["trains"]!,
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  if (item.delayMinutes > 0)
-                    Text(
-                      "${item.delayMinutes} মিনিট দেরিতে",
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.lateRed),
-                    ),
+                  const Icon(Icons.more_vert, color: AppTheme.textMuted),
                 ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildFilterTag(String label, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFFCE4EC) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? AppTheme.primary : AppTheme.textDark,
+        ),
+      ),
+    );
+  }
+
+  void _openStationPicker(BuildContext context) {
+    final provider = context.read<TrainProvider>();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("স্টেশন নির্বাচন করুন", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: provider.allStations.length,
+                  itemBuilder: (ctx, i) {
+                    final s = provider.allStations[i];
+                    return ListTile(
+                      title: Text(s.nameBn),
+                      subtitle: Text(s.name),
+                      onTap: () {
+                        setState(() => _currentStation = s.nameBn);
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
