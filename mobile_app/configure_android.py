@@ -36,34 +36,5 @@ def patch_manifest():
         f.write(content)
     print("Successfully patched AndroidManifest.xml with permissions and Bengali title.")
 
-def patch_build_gradle():
-    build_gradle_path = "android/build.gradle"
-    if not os.path.exists(build_gradle_path):
-        return
-
-    with open(build_gradle_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    subproject_fix = """
-allprojects {
-    subprojects {
-        afterEvaluate { project ->
-            if (project.hasProperty("android")) {
-                project.android {
-                    compileSdkVersion 34
-                    buildToolsVersion "34.0.0"
-                }
-            }
-        }
-    }
-}
-"""
-    if "compileSdkVersion 34" not in content:
-        content += "\n" + subproject_fix
-        with open(build_gradle_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        print("Patched android/build.gradle with compileSdkVersion 34 for subprojects.")
-
 if __name__ == "__main__":
     patch_manifest()
-    patch_build_gradle()
