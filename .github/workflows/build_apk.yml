@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build BD Train Tracker APK
@@ -42,10 +45,33 @@ jobs:
           cd mobile_app
           flutter pub get
 
-      - name: Build Release APK
+      - name: Dart Analyze
+        id: analyze
+        continue-on-error: true
         run: |
           cd mobile_app
-          flutter build apk --release --no-tree-shake-icons
+          flutter analyze > ../analyze_output.txt 2>&1 || true
+
+      - name: Build Release APK
+        id: build_apk
+        continue-on-error: true
+        run: |
+          cd mobile_app
+          flutter build apk --release --no-tree-shake-icons > ../build_output.txt 2>&1
+
+      - name: Save and Push Debug Logs
+        if: steps.build_apk.outcome != 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B debug-logs
+          git add -f analyze_output.txt build_output.txt
+          git commit -m "chore: save build debug logs"
+          git push -f origin debug-logs
+          echo "Debug logs pushed to debug-logs branch!"
+          echo "=== LAST 100 LINES OF BUILD OUTPUT ==="
+          tail -n 100 build_output.txt
+          exit 1
 
       - name: Rename Output APK
         run: |
